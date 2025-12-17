@@ -1,0 +1,115 @@
+create database librarydb;
+
+use librarydb;
+
+
+
+create table library (
+libraryid int identity(1,1) primary key,
+name varchar(100) not null unique,
+location varchar(150) not null,
+contactnumber varchar(20) not null,
+establishedyear int
+);
+
+
+
+create table staff (
+staffid int identity(1,1) primary key,
+fullname varchar(100) not null,
+position varchar(50) not null,
+contactnumber varchar(20) not null,
+libraryid int not null,
+constraint staff_library
+foreign key (libraryid) references library(libraryid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table book(
+bookid int identity(1,1) primary key,
+ISBN varchar(20) not null unique,
+title varchar(150) not null,
+genre varchar(20) not null,
+price decimal(10,2) not null,
+shelflocation varchar(50) not null,
+isavailable bit not null default (1),
+libraryid int not null,
+constraint book_genre check (genre in ('fiction','non-fiction','reference','children')),
+constraint book_price check (price > 0),
+constraint book_library
+foreign key (libraryid) references library(libraryid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table member (
+memberid int identity(1,1) primary key,
+fullname varchar(100) not null,
+email varchar(100) not null unique,
+phonenumber varchar(20),
+membershipstartdate date not null
+);
+
+
+
+create table loan (
+loanid int identity(1,1) primary key,
+loandate date not null,
+duedate date not null,
+returndate date null,
+status varchar(20) not null default ('issued'),
+memberid int not null,
+bookid int not null,
+constraint loan_status check (status in ('issued','returned','overdue')),
+constraint loan_returndate check (returndate is null or returndate >= loandate),
+constraint loan_member
+foreign key (memberid) references member(memberid)
+on delete cascade
+on update cascade,
+constraint loan_book
+foreign key (bookid) references book(bookid)
+on delete cascade
+on update cascade
+);
+
+
+
+
+create table payment (
+paymentid int identity(1,1) primary key,
+paymentdate date not null,
+amount decimal(10,2) not null,
+method varchar(50) not null,
+loanid int not null,
+constraint payment_amount check (amount > 0),
+constraint payment_loan 
+foreign key (loanid) references loan(loanid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table review (
+reviewid int identity(1,1) primary key,
+rating int not null,
+comments nvarchar(500) null
+constraint df_review_comments default ('no comments'),
+reviewdate date not null,
+memberid int not null,
+bookid int not null,
+constraint rating_range check (rating between 1 and 5),
+constraint review_member
+foreign key (memberid) references member(memberid)
+on delete cascade
+on update cascade,
+constraint review_book
+foreign key (bookid) references book(bookid)
+on delete cascade
+on update cascade
+);

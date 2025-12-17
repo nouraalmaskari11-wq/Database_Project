@@ -1,0 +1,261 @@
+create database librarydbase;
+
+use librarydbase;
+
+
+
+create table library (
+libraryid int identity(1,1) primary key,
+name varchar(100) not null unique,
+location varchar(150) not null,
+contactnumber varchar(20) not null,
+establishedyear int
+);
+
+
+
+create table staff (
+staffid int identity(1,1) primary key,
+fullname varchar(100) not null,
+position varchar(50) not null,
+contactnumber varchar(20) not null,
+libraryid int not null,
+constraint staff_library
+foreign key (libraryid) references library(libraryid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table book(
+bookid int identity(1,1) primary key,
+ISBN varchar(20) not null unique,
+title varchar(150) not null,
+genre varchar(20) not null,
+price decimal(10,2) not null,
+shelflocation varchar(50) not null,
+isavailable bit not null default (1),
+libraryid int not null,
+constraint book_genre check (genre in ('fiction','non-fiction','reference','children')),
+constraint book_price check (price > 0),
+constraint book_library
+foreign key (libraryid) references library(libraryid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table member (
+memberid int identity(1,1) primary key,
+fullname varchar(100) not null,
+email varchar(100) not null unique,
+phonenumber varchar(20),
+membershipstartdate date not null
+);
+
+
+
+create table loan (
+loanid int identity(1,1) primary key,
+loandate date not null,
+duedate date not null,
+returndate date null,
+status varchar(20) not null default ('issued'),
+memberid int not null,
+bookid int not null,
+constraint loan_status check (status in ('issued','returned','overdue')),
+constraint loan_returndate check (returndate is null or returndate >= loandate),
+constraint loan_member
+foreign key (memberid) references member(memberid)
+on delete cascade
+on update cascade,
+constraint loan_book
+foreign key (bookid) references book(bookid)
+on delete cascade
+on update cascade
+);
+
+
+
+
+create table payment (
+paymentid int identity(1,1) primary key,
+paymentdate date not null,
+amount decimal(10,2) not null,
+method varchar(50) not null,
+loanid int not null,
+constraint payment_amount check (amount > 0),
+constraint payment_loan 
+foreign key (loanid) references loan(loanid)
+on delete cascade
+on update cascade
+);
+
+
+
+create table review (
+reviewid int identity(1,1) primary key,
+rating int not null,
+comments nvarchar(500) null
+constraint df_review_comments default ('no comments'),
+reviewdate date not null,
+memberid int not null,
+bookid int not null,
+constraint rating_range check (rating between 1 and 5),
+constraint review_member
+foreign key (memberid) references member(memberid)
+on delete cascade
+on update cascade,
+constraint review_book
+foreign key (bookid) references book(bookid)
+on delete cascade
+on update cascade
+);
+
+
+
+
+INSERT INTO library (name, location, contactnumber, establishedyear)
+VALUES
+('Central Library', 'Muscat', '24112233', 2005),
+('Science Library', 'Sohar', '26885544', 2010);
+
+
+INSERT INTO staff (fullname, position, contactnumber, libraryid)
+VALUES
+('Ahmed Salim', 'Librarian', '91234567', 1),
+('Fatma Ali', 'Assistant', '92345678', 1),
+('Mohammed Said', 'Manager', '93456789', 2);
+
+
+
+INSERT INTO book (ISBN, title, genre, price, shelflocation, libraryid)
+VALUES
+('978-111', 'Data Structures', 'reference', 300, 'A1', 1),
+('978-222', 'Database Systems', 'non-fiction', 280, 'A2', 1),
+('978-333', 'Python Basics', 'fiction', 180, 'B1', 1),
+('978-444', 'Children Stories', 'children', 120, 'C1', 2),
+('978-555', 'Advanced Data Analysis', 'reference', 450, 'A3', 2);
+
+
+
+INSERT INTO member (fullname, email, phonenumber, membershipstartdate)
+VALUES
+('Ali Hassan', 'ali@gmail.com', '95123456', '2022-06-10'),
+('Sara Nasser', 'sara@gmail.com', '96123456', '2023-03-01'),
+('Huda Khalid', 'huda@gmail.com', '97123456', '2024-01-15');
+
+
+
+
+INSERT INTO loan (loandate, duedate, memberid, bookid)
+VALUES
+('2024-01-01', '2024-01-10', 1, 1),
+('2024-02-05', '2024-02-15', 2, 2);
+
+
+INSERT INTO payment (paymentdate, amount, method, loanid)
+VALUES
+('2024-01-05', 20, 'Cash', 1),
+('2024-02-10', 15, 'Card', 2);
+
+
+
+INSERT INTO review (rating, reviewdate, memberid, bookid)
+VALUES
+(5, '2024-01-06', 1, 1),
+(4, '2024-02-12', 2, 2);
+
+
+
+SELECT * FROM book;
+
+
+SELECT title, genre, isavailable FROM book;
+
+
+SELECT fullname, email, membershipstartdate FROM member;
+
+
+SELECT title, price AS BookPrice FROM book;
+
+
+
+SELECT * FROM book WHERE price > 250;
+
+
+SELECT * FROM member
+WHERE membershipstartdate < '2023-01-01';
+
+
+
+SELECT *FROM book WHERE publishedyear > 2018;
+
+
+SELECT * FROM book ORDER BY price DESC;
+
+
+SELECT 
+MAX(price) AS MaxPrice,
+MIN(price) AS MinPrice,
+AVG(price) AS AvgPrice
+FROM book;
+
+
+SELECT COUNT(*) AS TotalBooks FROM book;
+
+
+SELECT * FROM member WHERE email IS NULL;
+
+
+
+SELECT * FROM book
+WHERE title LIKE '%Data%';
+
+
+SET IDENTITY_INSERT member ON;
+
+INSERT INTO member (memberid, fullname, email, phonenumber, membershipstartdate)
+VALUES (405, 'Noura Almaskari', 'noura@gmail.com', '99988877', GETDATE());
+
+SET IDENTITY_INSERT member OFF;
+
+
+
+INSERT INTO loan (loandate, duedate, memberid, bookid)
+VALUES (GETDATE(), DATEADD(day, 7, GETDATE()), 405, 1011);
+
+
+
+INSERT INTO member (fullname, email, phonenumber, membershipstartdate)
+VALUES ('No Email Member', NULL, NULL, GETDATE());
+
+
+
+UPDATE loan
+SET returndate = GETDATE(), status = 'returned'
+WHERE memberid = 405;
+
+
+
+UPDATE book
+SET price = price * 1.05
+WHERE price < 200;
+
+
+
+
+ALTER TABLE member ADD status VARCHAR(20) DEFAULT 'Active';
+UPDATE member
+SET status = 'Active'
+WHERE membershipstartdate >= '2024-01-01';
+
+
+
+
+DELETE FROM member
+WHERE memberid NOT IN (
+    SELECT DISTINCT memberid FROM loan
+);
