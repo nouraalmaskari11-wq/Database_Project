@@ -1,0 +1,476 @@
+
+   --Create Database
+
+CREATE DATABASE LibraryDataBase;
+
+
+USE LibraryDataBase;
+
+
+   --Library Table
+
+CREATE TABLE Library (
+LibraryID INT IDENTITY(1,1) PRIMARY KEY,
+Name VARCHAR(100) NOT NULL UNIQUE,
+Location VARCHAR(150) NOT NULL,
+ContactNumber VARCHAR(20) NOT NULL,
+EstablishedYear INT
+);
+
+
+   --Staff Table
+
+CREATE TABLE Staff (
+StaffID INT IDENTITY(1,1) PRIMARY KEY,
+FullName VARCHAR(100) NOT NULL,
+Position VARCHAR(50) NOT NULL,
+ContactNumber VARCHAR(20) NOT NULL,
+LibraryID INT NOT NULL,
+CONSTRAINT FK_Staff_Library
+FOREIGN KEY (LibraryID)
+REFERENCES Library(LibraryID)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+);
+
+
+   --Book Table
+
+CREATE TABLE Book (
+BookID INT IDENTITY(1,1) PRIMARY KEY,
+ISBN VARCHAR(20) NOT NULL UNIQUE,
+Title VARCHAR(150) NOT NULL,
+Genre VARCHAR(20) NOT NULL,
+Price DECIMAL(10,2) NOT NULL,
+ShelfLocation VARCHAR(50) NOT NULL,
+IsAvailable BIT NOT NULL DEFAULT (1),
+LibraryID INT NOT NULL,
+CONSTRAINT CHK_Book_Genre
+CHECK (Genre IN ('Fiction','Non-fiction','Reference','Children')),
+CONSTRAINT CHK_Book_Price
+CHECK (Price > 0),
+CONSTRAINT FK_Book_Library
+FOREIGN KEY (LibraryID)
+REFERENCES Library(LibraryID)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+);
+
+
+   --Member Table
+
+CREATE TABLE Member (
+MemberID INT IDENTITY(1,1) PRIMARY KEY,
+FullName VARCHAR(100) NOT NULL,
+Email VARCHAR(100) NOT NULL UNIQUE,
+PhoneNumber VARCHAR(20),
+MembershipStartDate DATE NOT NULL
+);
+
+
+   --Loan Table
+
+CREATE TABLE Loan (
+LoanID INT IDENTITY(1,1) PRIMARY KEY,
+LoanDate DATE NOT NULL,
+DueDate DATE NOT NULL,
+ReturnDate DATE NULL,
+Status VARCHAR(20) NOT NULL DEFAULT ('Issued'),
+MemberID INT NOT NULL,
+BookID INT NOT NULL,
+CONSTRAINT CHK_Loan_Status
+CHECK (Status IN ('Issued','Returned','Overdue')),
+CONSTRAINT CHK_Loan_ReturnDate
+CHECK (ReturnDate IS NULL OR ReturnDate >= LoanDate),
+CONSTRAINT FK_Loan_Member
+FOREIGN KEY (MemberID)
+REFERENCES Member(MemberID)
+ON DELETE CASCADE
+ON UPDATE CASCADE,
+CONSTRAINT FK_Loan_Book
+FOREIGN KEY (BookID)
+REFERENCES Book(BookID)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+);
+
+
+   --Payment Table
+
+CREATE TABLE Payment (
+PaymentID INT IDENTITY(1,1) PRIMARY KEY,
+PaymentDate DATE NOT NULL,
+Amount DECIMAL(10,2) NOT NULL,
+Method VARCHAR(50) NOT NULL,
+LoanID INT NOT NULL,
+CONSTRAINT CHK_Payment_Amount
+CHECK (Amount > 0),
+CONSTRAINT FK_Payment_Loan
+FOREIGN KEY (LoanID)
+REFERENCES Loan(LoanID)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+);
+
+
+   --Review Table
+
+CREATE TABLE Review (
+ReviewID INT IDENTITY(1,1) PRIMARY KEY,
+Rating INT NOT NULL,
+Comments NVARCHAR(500) NULL
+CONSTRAINT DF_Review_Comments DEFAULT ('No comments'),
+ReviewDate DATE NOT NULL,
+MemberID INT NOT NULL,
+BookID INT NOT NULL,
+CONSTRAINT CHK_Review_Rating
+CHECK (Rating BETWEEN 1 AND 5),
+CONSTRAINT FK_Review_Member
+FOREIGN KEY (MemberID)
+REFERENCES Member(MemberID)
+ON DELETE CASCADE
+ON UPDATE CASCADE,
+CONSTRAINT FK_Review_Book
+FOREIGN KEY (BookID)
+REFERENCES Book(BookID)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+);
+
+
+
+--TEST DATA (REQUIRED)...INSERT FOR EACH TABLE
+
+INSERT INTO Library (Name, Location, ContactNumber, EstablishedYear)
+VALUES
+('Central Library', 'Muscat', '24123456', 2005),
+('Nizwa Library', 'Nizwa', '25432111', 2010),
+('Sohar Library', 'Sohar', '26889977', 2015);
+
+
+INSERT INTO Staff (FullName, Position, ContactNumber, LibraryID)
+VALUES
+('Ahmed Al-Harthy', 'Manager', '91234567', 1),
+('Fatma Al-Zadjali', 'Assistant', '92345678', 2),
+('Salim Al-Rawahi', 'Librarian', '93456789', 3);
+
+
+INSERT INTO Member (FullName, Email, PhoneNumber, MembershipStartDate)
+VALUES
+('Ali Said', 'ali@mail.com', '90000001', '2024-01-01'),
+('Muna Rashid', 'muna@mail.com', '90000002', '2024-01-05'),
+('Khalid Ahmed', 'khalid@mail.com', '90000003', '2024-02-01'),
+('Aisha Noor', 'aisha@mail.com', '90000004', '2024-02-10'),
+('Salma Hassan', 'salma@mail.com', '90000005', '2024-03-01'),
+('Yousef Omar', 'yousef@mail.com', '90000006', '2024-03-15'),
+('Noor Said', 'noor@mail.com', '90000007', '2024-04-01'),
+('Hamed Ali', 'hamed@mail.com', '90000008', '2024-04-05'),
+('Sara Nasser', 'sara@mail.com', '90000009', '2024-04-10'),
+('Omar Khalfan', 'omar@mail.com', '90000010', '2024-05-01');
+
+
+INSERT INTO Book (ISBN, Title, Genre, Price, ShelfLocation, LibraryID)
+VALUES
+('ISBN001','SQL Basics','Reference',15,'A1',1),
+('ISBN002','Advanced SQL','Reference',20,'A2',1),
+('ISBN003','Database Design','Reference',18,'A3',1),
+('ISBN004','Harry Potter','Fiction',10,'B1',1),
+('ISBN005','The Hobbit','Fiction',12,'B2',1),
+
+('ISBN006','Data Science','Non-fiction',22,'C1',2),
+('ISBN007','AI Basics','Non-fiction',25,'C2',2),
+('ISBN008','Python Guide','Reference',19,'C3',2),
+('ISBN009','Fairy Tales','Children',8,'D1',2),
+('ISBN010','Kids Math','Children',6,'D2',2),
+
+('ISBN011','History of Oman','Non-fiction',14,'E1',3),
+('ISBN012','World Atlas','Reference',30,'E2',3),
+('ISBN013','Science Fun','Children',9,'E3',3),
+('ISBN014','Mystery Island','Fiction',11,'F1',3),
+('ISBN015','Lost City','Fiction',13,'F2',3),
+('ISBN016','Novel A','Fiction',10,'F3',3),
+('ISBN017','Novel B','Fiction',10,'F4',3),
+('ISBN018','Novel C','Fiction',10,'F5',3),
+('ISBN019','Novel D','Fiction',10,'F6',3),
+('ISBN020','Novel E','Fiction',10,'F7',3);
+
+
+
+INSERT INTO Loan (LoanDate, DueDate, Status, MemberID, BookID)
+VALUES
+('2024-05-01','2024-05-10','Returned',1,1),
+('2024-05-03','2024-05-12','Returned',2,2),
+('2024-05-05','2024-05-15','Returned',3,3),
+('2024-05-07','2024-05-17','Overdue',4,4),
+('2024-05-09','2024-05-19','Issued',5,5),
+('2024-05-10','2024-05-20','Returned',6,6),
+('2024-05-11','2024-05-21','Returned',7,7),
+('2024-05-12','2024-05-22','Issued',8,8),
+('2024-05-13','2024-05-23','Returned',9,9),
+('2024-05-14','2024-05-24','Returned',10,10),
+('2024-06-01','2024-06-10','Issued',1,11),
+('2024-06-02','2024-06-11','Issued',2,12),
+('2024-06-03','2024-06-12','Returned',3,13),
+('2024-06-04','2024-06-13','Returned',4,14),
+('2024-06-05','2024-06-14','Issued',5,15);
+
+
+
+
+INSERT INTO Payment (PaymentDate, Amount, Method, LoanID)
+VALUES
+(GETDATE(), 6, 'Cash', 4),
+(GETDATE(), 4, 'Card', 1),
+(GETDATE(), 8, 'Cash', 7);
+
+
+
+
+--Section 1: Complex Queries with Joins
+
+
+
+--1.Library Book Inventory Report
+
+SELECT l.Name,
+COUNT(b.BookID) TotalBooks,
+SUM(CASE WHEN b.IsAvailable=1 THEN 1 ELSE 0 END) AvailableBooks,
+SUM(CASE WHEN b.IsAvailable=0 THEN 1 ELSE 0 END) BooksOnLoan
+FROM Library l
+LEFT JOIN Book b ON l.LibraryID=b.LibraryID
+GROUP BY l.Name;
+
+
+--2. Active Borrowers Analysis
+
+SELECT m.FullName, m.Email, b.Title, ln.LoanDate, ln.DueDate, ln.Status
+FROM Loan ln
+JOIN Member m ON ln.MemberID=m.MemberID
+JOIN Book b ON ln.BookID=b.BookID
+WHERE ln.Status IN ('Issued','Overdue');
+
+
+--3. Overdue Loans with Member Details
+
+SELECT m.FullName, m.PhoneNumber, b.Title, l.Name Library,
+DATEDIFF(DAY, ln.DueDate, GETDATE()) DaysOverdue,
+ISNULL(SUM(p.Amount),0) FinesPaid
+FROM Loan ln
+JOIN Member m ON ln.MemberID=m.MemberID
+JOIN Book b ON ln.BookID=b.BookID
+JOIN Library l ON b.LibraryID=l.LibraryID
+LEFT JOIN Payment p ON ln.LoanID=p.LoanID
+WHERE ln.Status='Overdue'
+GROUP BY m.FullName,m.PhoneNumber,b.Title,l.Name,ln.DueDate;
+
+
+
+--4. Staff Performance Overview
+
+SELECT l.Name, s.FullName, s.Position, COUNT(b.BookID) BooksManaged
+FROM Library l
+JOIN Staff s ON l.LibraryID=s.LibraryID
+LEFT JOIN Book b ON l.LibraryID=b.LibraryID
+GROUP BY l.Name,s.FullName,s.Position;
+
+
+
+
+--5. Book Popularity Report
+
+SELECT b.Title,b.ISBN,b.Genre,
+COUNT(ln.LoanID) TimesLoaned,
+AVG(r.Rating) AvgRating
+FROM Book b
+JOIN Loan ln ON b.BookID=ln.BookID
+LEFT JOIN Review r ON b.BookID=r.BookID
+GROUP BY b.Title,b.ISBN,b.Genre
+HAVING COUNT(ln.LoanID)>=3;
+
+
+
+--6. Member Reading History
+
+SELECT m.FullName,b.Title,ln.LoanDate,ln.ReturnDate,r.Rating,r.Comments
+FROM Member m
+JOIN Loan ln ON m.MemberID=ln.MemberID
+JOIN Book b ON ln.BookID=b.BookID
+LEFT JOIN Review r ON r.MemberID=m.MemberID AND r.BookID=b.BookID;
+
+
+
+
+--7. Revenue Analysis by Genre
+
+SELECT b.Genre,
+COUNT(ln.LoanID) TotalLoans,
+SUM(p.Amount) TotalRevenue,
+AVG(p.Amount) AvgFine
+FROM Book b
+JOIN Loan ln ON b.BookID=ln.BookID
+JOIN Payment p ON ln.LoanID=p.LoanID
+GROUP BY b.Genre;
+
+
+
+
+
+
+
+
+
+--Section 2: Aggregate Functions and Grouping
+
+
+--8. Monthly Loan Statistics
+SELECT 
+DATENAME(MONTH, LoanDate) AS MonthName,
+COUNT(*) AS TotalLoans,
+SUM(CASE WHEN Status = 'Returned' THEN 1 ELSE 0 END) AS Returned,
+SUM(CASE WHEN Status IN ('Issued','Overdue') THEN 1 ELSE 0 END) AS ActiveLoans
+FROM Loan
+WHERE YEAR(LoanDate) = YEAR(GETDATE())
+GROUP BY DATENAME(MONTH, LoanDate), MONTH(LoanDate)
+ORDER BY MONTH(LoanDate);
+
+
+
+
+--9. Member Engagement Metrics
+SELECT 
+m.FullName,
+COUNT(ln.LoanID) AS TotalBorrowed,
+SUM(CASE WHEN ln.Status IN ('Issued','Overdue') THEN 1 ELSE 0 END) AS CurrentlyBorrowed,
+ISNULL(SUM(p.Amount),0) AS TotalFines,
+AVG(r.Rating) AS AvgRating
+FROM Member m
+JOIN Loan ln ON m.MemberID = ln.MemberID
+LEFT JOIN Payment p ON ln.LoanID = p.LoanID
+LEFT JOIN Review r ON m.MemberID = r.MemberID
+GROUP BY m.FullName;
+
+
+
+
+--10. Library Performance Comparison
+SELECT 
+l.Name,
+COUNT(b.BookID) AS TotalBooks,
+COUNT(ln.MemberID) AS ActiveMembers,
+ISNULL(SUM(p.Amount),0) AS TotalRevenue,
+COUNT(b.BookID) * 1.0 / NULLIF(COUNT(ln.MemberID),0) AS AvgBooksPerMember
+FROM Library l
+LEFT JOIN Book b ON l.LibraryID = b.LibraryID
+LEFT JOIN Loan ln ON b.BookID = ln.BookID
+LEFT JOIN Payment p ON ln.LoanID = p.LoanID
+GROUP BY l.Name;
+
+
+
+
+
+
+
+--11. High-Value Books Analysis
+SELECT 
+b.Title,
+b.Genre,
+b.Price,
+AVG(b2.Price) OVER (PARTITION BY b.Genre) AS GenreAvgPrice,
+b.Price - AVG(b2.Price) OVER (PARTITION BY b.Genre) AS PriceDifference
+FROM Book b
+JOIN Book b2 ON b.Genre = b2.Genre
+WHERE b.Price > (
+SELECT AVG(Price) 
+FROM Book 
+WHERE Genre = b.Genre
+);
+
+
+
+
+--12. Payment Pattern Analysis
+
+SELECT 
+Method,
+COUNT(*) AS Transactions,
+SUM(Amount) AS TotalCollected,
+AVG(Amount) AS AvgPayment,
+SUM(Amount) * 100.0 / (SELECT SUM(Amount) FROM Payment) AS PercentageOfRevenue
+FROM Payment
+GROUP BY Method;
+
+
+
+
+--Section 3: Views Creation
+
+--13. vw_CurrentLoans
+
+CREATE VIEW vw_CurrentLoans AS
+SELECT 
+m.FullName,
+b.Title,
+ln.LoanDate,
+ln.DueDate,
+ln.Status,
+DATEDIFF(DAY, GETDATE(), ln.DueDate) AS DaysToOrOverdue
+FROM Loan ln
+JOIN Member m ON ln.MemberID = m.MemberID
+JOIN Book b ON ln.BookID = b.BookID
+WHERE ln.Status IN ('Issued','Overdue');
+
+
+
+--14. vw_LibraryStatistics
+
+--(Q14- VW_LIBRARYSTATISTICS SHOULD SHOW LIBRARY NAME,
+--TOTAL BOOKS OWNED BY THE LIBRARY,
+--NUMBER OF AVAILABLE BOOKS,
+--TOTAL ACTIVE MEMBERS(MEMBERS WHO HAVE AT LEAST ONE LOAN FROM THIS LIBRARY'S BOOKS),
+--ACTIVE LOANS (LOANS OF BOOKS BELONGING TO THIS LIBRARY ),
+--TOTAL STAFF WORKING AT THE LIBRARY,
+--TOTAL REVENUE FROM FINES (FROM LOANS OF THIS LIBRARY'S BOOKS).)
+
+CREATE VIEW vw_LibraryStatistics AS
+
+SELECT
+l.Name AS LibraryName,
+COUNT(b.BookID) AS TotalBooksOwned,
+SUM(CASE WHEN b.IsAvailable = 1 THEN 1 ELSE 0 END) AS AvailableBooks,
+COUNT(DISTINCT ln.MemberID) AS ActiveMembers,
+COUNT(DISTINCT ln.LoanID) AS ActiveLoans,
+COUNT(DISTINCT s.StaffID) AS TotalStaff,
+ISNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM Library l
+LEFT JOIN Book b ON l.LibraryID = b.LibraryID
+LEFT JOIN Loan ln ON b.BookID = ln.BookID AND ln.Status IN ('Issued', 'Overdue')
+LEFT JOIN Staff s ON l.LibraryID = s.LibraryID
+LEFT JOIN Payment p ON ln.LoanID = p.LoanID
+GROUP BY l.Name;
+
+
+
+
+
+
+--15. vw_BookDetailsWithReviews
+
+
+CREATE VIEW vw_BookDetailsWithReviews AS
+SELECT 
+b.Title,
+b.Genre,
+b.IsAvailable,
+AVG(r.Rating) AS AvgRating,
+COUNT(r.ReviewID) AS TotalReviews,
+MAX(r.ReviewDate) AS LatestReview
+FROM Book b
+LEFT JOIN Review r ON b.BookID = r.BookID
+GROUP BY b.Title, b.Genre, b.IsAvailable;
+
+
+
+
+
+
